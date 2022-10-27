@@ -1,16 +1,9 @@
-#build stage
-FROM golang:alpine AS builder
-RUN apk add --no-cache git
-WORKDIR /go/src/app
-COPY ./src .
-RUN go get -d -v ./...
-RUN go build -o /go/bin/app -v ./...
+FROM golang:alpine AS build
 
-#final stage
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-COPY --from=builder /go/bin/app /app
-ENTRYPOINT /app
-LABEL Name=desafios Version=0.0.1
-EXPOSE 3000
-CMD [ "go run index.go" ]
+WORKDIR /src/
+COPY ./src/ go.* /src/
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/app
+
+FROM scratch
+COPY --from=build /bin/app /bin/app
+ENTRYPOINT ["/bin/app"]
